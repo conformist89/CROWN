@@ -19,6 +19,23 @@ struct GenParticle {
 bool check_mother(ROOT::RVec<GenParticle> genparticles, const int index,
                   const int mother_pdgid);
 
+
+namespace whtautau_tripleselection {
+ROOT::RDF::RNode buildgentriple(ROOT::RDF::RNode df, const std::string &recotriple,
+                              const std::string &genindex_particle1,
+                              const std::string &genindex_particle2,
+                              const std::string &genindex_particle3,
+                              const std::string &gentriple);
+namespace three_flavor {
+auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_leplep);
+} // end namespace three_flavor
+namespace elemutau {
+    ROOT::RDF::RNode TripleSelection(ROOT::RDF::RNode df,
+                               const std::vector<std::string> &input_vector,
+                               const std::string &triplename,
+                               const float &mindeltaR_leptau, const float &mindeltaR_leplep);
+} //end namespace elemutau
+}
 namespace ditau_pairselection {
 ROOT::RDF::RNode buildgenpair(ROOT::RDF::RNode df, const std::string &recopair,
                               const std::string &genindex_particle1,

@@ -18,7 +18,9 @@ enum class GenMatchingCode : int {
     IS_ELE_FROM_TAU = 3,
     IS_MUON_FROM_TAU = 4,
     IS_TAU_HAD_DECAY = 5,
-    IS_FAKE = 6
+    IS_FAKE = 6,
+    IS_ELE_FROM_W = 7,
+    IS_MUON_FROM_W = 8
 };
 
 namespace genmatching {
@@ -70,10 +72,14 @@ ROOT::RDF::RNode genmatching(ROOT::RDF::RNode df, const std::string &outputname,
                              const std::string &genparticles_eta,
                              const std::string &genparticles_phi,
                              const std::string &genparticles_mass,
+                             const std::string &genparticle_motheridx,
+                             const std::string &genparticles_status,
                              const std::string &lepton_p4) {
     auto match_lepton = [](const std::vector<int> &hadronicGenTaus,
                            const ROOT::RVec<int> &pdgids,
+                           const ROOT::RVec<int> &mother_idx,
                            const ROOT::RVec<int> &status_flags,
+                           const ROOT::RVec<int> &status,
                            const ROOT::RVec<float> &pts,
                            const ROOT::RVec<float> &etas,
                            const ROOT::RVec<float> &phis,
@@ -82,8 +88,13 @@ ROOT::RDF::RNode genmatching(ROOT::RDF::RNode df, const std::string &outputname,
         // find closest lepton fulfilling the requirements
         float min_delta_r = 9999;
         int closest_genparticle_index = 0;
+        int closest_genparticle_mother_pdgid = 0;
+        int closest_genparticle_mother_statusFlag = 0;
+        int closest_genparticle_mother_status = 0;
         for (unsigned int i = 0; i < pdgids.size(); i++) {
             int pdgid = std::abs(pdgids.at(i));
+             Logger::get("genmatching::tau::genmatching")
+            ->debug("hier");
             // check
             // 1. if there is a gen electron or muon close to the lepton
             // 2. that the genparticle pt is larger than 8 GeV
@@ -97,8 +108,24 @@ ROOT::RDF::RNode genmatching(ROOT::RDF::RNode df, const std::string &outputname,
                 float delta_r =
                     ROOT::Math::VectorUtil::DeltaR(gen_p4, lepton_p4);
                 if (delta_r < min_delta_r) {
+            Logger::get("genmatching::tau::genmatching")
+                ->debug("pdgids {}, status {}, status_flags {}, mother_idx {}", pdgids, status, status_flags, mother_idx);
+            Logger::get("genmatching::tau::genmatching")
+                ->debug("mother_idx {}, pdgids {}, status {}, status_flags {}", mother_idx.at(i), pdgids.at(i), status_flags.at(i), status.at(i));
+                if (mother_idx.at(i) == -1) {
                     closest_genparticle_index = i;
+                    closest_genparticle_mother_pdgid = pdgids.at(i);
+                    closest_genparticle_mother_status = status.at(i);
+                    closest_genparticle_mother_statusFlag = status_flags.at(i);
                     min_delta_r = delta_r;
+                }
+                else {
+                    closest_genparticle_index = i;
+                    closest_genparticle_mother_pdgid = pdgids.at(mother_idx.at(i));
+                    closest_genparticle_mother_status = status.at(mother_idx.at(i));
+                    closest_genparticle_mother_statusFlag = status_flags.at(mother_idx.at(i));
+                    min_delta_r = delta_r;
+                }
                 }
             }
         }
@@ -144,13 +171,23 @@ ROOT::RDF::RNode genmatching(ROOT::RDF::RNode df, const std::string &outputname,
                 // statusbit 1 is prompt electron
                 Logger::get("genmatching::tau::genmatching")
                     ->debug("IS_ELE_PROMPT");
-                return (int)GenMatchingCode::IS_ELE_PROMPT;
+                    if (abs(closest_genparticle_mother_pdgid) == 24 && closest_genparticle_mother_status == 62 && (closest_genparticle_mother_statusFlag & 10000000000000)){
+                        return (int)GenMatchingCode::IS_ELE_FROM_W;
+                    }
+                    else {
+                        return (int)GenMatchingCode::IS_ELE_PROMPT;
+                    }
             }
             if (closest_pdgid == 13 && prompt) {
                 // statusbit 2 is prompt muon
                 Logger::get("genmatching::tau::genmatching")
                     ->debug("IS_MUON_PROMPT");
-                return (int)GenMatchingCode::IS_MUON_PROMPT;
+                if (abs(closest_genparticle_mother_pdgid) == 24 && closest_genparticle_mother_status == 62 && (closest_genparticle_mother_statusFlag & 10000000000000)){
+                        return (int)GenMatchingCode::IS_MUON_FROM_W;
+                    }
+                    else {
+                        return (int)GenMatchingCode::IS_MUON_PROMPT;
+                    }
             }
             if (closest_pdgid == 11 && from_tau) {
                 // statusbit 3 is electron from tau
@@ -173,7 +210,7 @@ ROOT::RDF::RNode genmatching(ROOT::RDF::RNode df, const std::string &outputname,
 
     auto df1 =
         df.Define(outputname, match_lepton,
-                  {hadronicGenTaus, genparticles_pdgid, genparticles_statusFlag,
+                  {hadronicGenTaus, genparticles_pdgid, genparticle_motheridx, genparticles_statusFlag, genparticles_status,
                    genparticles_pt, genparticles_eta, genparticles_phi,
                    genparticles_mass, lepton_p4});
     return df1;

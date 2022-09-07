@@ -151,6 +151,29 @@ ROOT::RDF::RNode charge(ROOT::RDF::RNode df, const std::string &outputname,
         },
         {pairname, chargecolumn});
 }
+/// Function to calculate the scalar sum of pts for given lorentz vectors and add it to the
+/// dataframe
+///
+/// \param df the dataframe to add the quantity to
+/// \param outputname name of the new column containing the pt value
+/// \param inputvector name of the column containing the lorentz vector
+///
+/// \returns a dataframe with the new column
+
+ROOT::RDF::RNode Lt(ROOT::RDF::RNode df, const std::string &outputname,
+                       const std::string &pt_1, const std::string &pt_2, const std::string &pt_3) {
+    // build scalar sum of pts of 3 objects
+    return df.Define(
+        outputname,
+        [](const float &pt_1,
+           const float &pt_2, const float &pt_3) {
+            if (pt_3 < 0.0 || pt_3 < 0.0 || pt_3 < 0.0)
+                return default_float;
+            auto const triple_lepton_pt = pt_1 + pt_2 + pt_3;
+            return (float)triple_lepton_pt;
+        },
+        {pt_1, pt_2, pt_3});
+}
 /// Function to calculate the visible mass from a pair of lorentz vectors and
 /// add it to the dataframe. The visible mass is calculated as the mass of the
 /// lorentz vector of the dilepton system.
@@ -161,7 +184,6 @@ ROOT::RDF::RNode charge(ROOT::RDF::RNode df, const std::string &outputname,
 /// required lorentz vectors
 ///
 /// \returns a dataframe with the new column
-
 ROOT::RDF::RNode m_vis(ROOT::RDF::RNode df, const std::string &outputname,
                        const std::vector<std::string> &inputvectors) {
     // build visible mass from the two particles

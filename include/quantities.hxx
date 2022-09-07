@@ -24,6 +24,8 @@ ROOT::RDF::RNode dz(ROOT::RDF::RNode df, const std::string &outputname,
 ROOT::RDF::RNode charge(ROOT::RDF::RNode df, const std::string &outputname,
                         const int &position, const std::string &pairname,
                         const std::string &chargecolumn);
+ROOT::RDF::RNode Lt(ROOT::RDF::RNode df, const std::string &outputname,
+                       const std::string &pt_1, const std::string &pt_2, const std::string &pt_3);
 ROOT::RDF::RNode m_vis(ROOT::RDF::RNode df, const std::string &outputname,
                        const std::vector<std::string> &inputvectors);
 ROOT::RDF::RNode pt_vis(ROOT::RDF::RNode df, const std::string &outputname,
