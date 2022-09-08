@@ -129,9 +129,9 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
         // !!!!!! check what to do with events that contain more than 1 t_h
         // !! check weather the veto allows only for one triple?
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("org tau {}, org ele {}, org mu {}", original_tau_indices.size(), original_electron_indices.size(), original_muon_indices.size());
+            ->debug("org tau {}, org ele {}, org mu {}", original_tau_indices.size(), original_electron_indices.size(), original_muon_indices.size());
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("masks: org tau {}, org ele {}, org mu {}", tau_mask, electron_mask, muon_mask);    
+            ->debug("masks: org tau {}, org ele {}, org mu {}", tau_mask, electron_mask, muon_mask);    
 
         // only select events with one good muon and one good electron
         if (original_tau_indices.size() == 0 or
@@ -142,11 +142,11 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
         Logger::get("three_flavor::TripleSelectionAlgo")
             ->debug("Running algorithm on good taus and leptons");
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("original electron indices {}", original_electron_indices);
+            ->debug("original electron indices {}", original_electron_indices);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("original muon indices {}", original_muon_indices);
+            ->debug("original muon indices {}", original_muon_indices);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("original tau indices {}", original_tau_indices);
+            ->debug("original tau indices {}", original_tau_indices);
 
         const auto selected_tau_pt =
             ROOT::VecOps::Take(tau_pt, original_tau_indices);
@@ -157,27 +157,27 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
         const auto selected_muon_pt =
             ROOT::VecOps::Take(muon_pt, original_muon_indices);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("tau mask {}", tau_mask);
+            ->debug("tau mask {}", tau_mask);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("tau pt {}", tau_pt);
+            ->debug("tau pt {}", tau_pt);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("muon pt {}", muon_pt);
+            ->debug("muon pt {}", muon_pt);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("electron pt {}", electron_pt);
+            ->debug("electron pt {}", electron_pt);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("selected tau pt {}", selected_tau_pt);
+            ->debug("selected tau pt {}", selected_tau_pt);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("selected tau iso {}", selected_tau_iso);
+            ->debug("selected tau iso {}", selected_tau_iso);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("selected electron pt {}", selected_electron_pt);
+            ->debug("selected electron pt {}", selected_electron_pt);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("selected muon pt {}", selected_muon_pt);
+            ->debug("selected muon pt {}", selected_muon_pt);
         // only select triples with the pt_electron > pt_muon; original_lepton_indices.at(0) is the indice of the lepton with nonzero mask in the mask vector
         if (selected_muon_pt.at(0) > selected_electron_pt.at(0)) {
             Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("selected electron pt {}", selected_electron_pt);
+            ->debug("selected electron pt {}", selected_electron_pt);
             Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("selected muon pt {}", selected_muon_pt);
+            ->debug("selected muon pt {}", selected_muon_pt);
             return selected_triple;
         }
 
@@ -185,23 +185,23 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
         const auto sorted_tau_idx = ROOT::VecOps::Argsort(
             -1. * selected_tau_iso);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("sorted taus {}", sorted_tau_idx);
+            ->debug("sorted taus {}", sorted_tau_idx);
 
         // construct the four vectors of the selected leptons and check the DeltaR requirement for leptons. Triples are rejected if the leptons are too close
         ROOT::Math::PtEtaPhiMVector electron = ROOT::Math::PtEtaPhiMVector(
             electron_pt.at(original_electron_indices.at(0)), electron_eta.at(original_electron_indices.at(0)),
             electron_phi.at(original_electron_indices.at(0)), electron_mass.at(original_electron_indices.at(0)));
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("{} electron vector: {}", original_electron_indices, electron);
+            ->debug("{} electron vector: {}", original_electron_indices, electron);
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("muon pts: {}", muon_pt); 
+            ->debug("muon pts: {}", muon_pt); 
         ROOT::Math::PtEtaPhiMVector muon = ROOT::Math::PtEtaPhiMVector(
             muon_pt.at(original_muon_indices.at(0)), muon_eta.at(original_muon_indices.at(0)),
             muon_phi.at(original_muon_indices.at(0)), muon_mass.at(original_muon_indices.at(0)));
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("{} muon vector: {}", original_muon_indices, muon);    
+            ->debug("{} muon vector: {}", original_muon_indices, muon);    
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("deltaR electron muon {}", ROOT::Math::VectorUtil::DeltaR(electron, muon));      
+            ->debug("deltaR electron muon {}", ROOT::Math::VectorUtil::DeltaR(electron, muon));      
         if (ROOT::Math::VectorUtil::DeltaR(electron, muon) < mindeltaR_leplep) {
             return selected_triple;
         }
@@ -209,12 +209,12 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
         //Construct four vectors of hadronic tau candidates and check the DeltaR requirements to the leptons. Triples are rejected if the candidates are too close
         for (auto &candidate : sorted_tau_idx) {
             Logger::get("three_flavor::TripleSelectionAlgo")
-                ->warn("{} warning1", original_tau_indices.at(candidate));
+                ->debug("{} debuging1", original_tau_indices.at(candidate));
             ROOT::Math::PtEtaPhiMVector tau = ROOT::Math::PtEtaPhiMVector(
                 tau_pt.at(original_tau_indices.at(candidate)), tau_eta.at(original_tau_indices.at(candidate)), tau_phi.at(original_tau_indices.at(candidate)),
                 tau_mass.at(original_tau_indices.at(candidate)));
             Logger::get("three_flavor::TripleSelectionAlgo")
-                ->warn("{} tau pt: {}", original_tau_indices.at(candidate), tau.Pt());
+                ->debug("{} tau pt: {}", original_tau_indices.at(candidate), tau.Pt());
             Logger::get("three_flavor::TripleSelectionAlgo")
                 ->debug("DeltaR(electron, tau): {}",
             ROOT::Math::VectorUtil::DeltaR(electron, tau));
@@ -245,12 +245,12 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
                 selected_triple = {static_cast<int>(original_electron_indices.at(0)), static_cast<int>(original_muon_indices.at(0)), 
                                     static_cast<int>(original_tau_indices.at(candidate))};
                 Logger::get("three_flavor::TripleSelectionAlgo")
-                ->warn("selected triple {}", selected_triple);
+                ->debug("selected triple {}", selected_triple);
                 break;
             }
         }
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->warn("Final triple {} {} {}", selected_triple[0], selected_triple[1], selected_triple[2]);
+            ->debug("Final triple {} {} {}", selected_triple[0], selected_triple[1], selected_triple[2]);
 
         return selected_triple;
     };
