@@ -132,7 +132,7 @@ ROOT::RDF::RNode genmatching(ROOT::RDF::RNode df, const std::string &outputname,
         Logger::get("genmatching::tau::genmatching")
             ->debug("closest genlepton {} // DeltaR {}",
                     closest_genparticle_index, min_delta_r);
-        // now loop trough the gentaus and check, if they are closer to the
+        // now loop through the gentaus and check, if they are closer to the
         // lepton than the closest lepton genparticle
         for (auto hadronicGenTau : hadronicGenTaus) {
             // check if the hadronicGenTau is closer to the lepton than the
@@ -169,24 +169,28 @@ ROOT::RDF::RNode genmatching(ROOT::RDF::RNode df, const std::string &outputname,
                 IntBits(status_flags.at(closest_genparticle_index)).test(5);
             if (closest_pdgid == 11 && prompt) {
                 // statusbit 1 is prompt electron
-                Logger::get("genmatching::tau::genmatching")
-                    ->debug("IS_ELE_PROMPT");
-                    if (abs(closest_genparticle_mother_pdgid) == 24 && closest_genparticle_mother_status == 62 && (closest_genparticle_mother_statusFlag & 10000000000000)){
+                    if (abs(closest_genparticle_mother_pdgid) == 24){
+                        Logger::get("genmatching::tau::genmatching")
+                            ->debug("IS_ELE_FROM_W");
                         return (int)GenMatchingCode::IS_ELE_FROM_W;
                     }
                     else {
+                        Logger::get("genmatching::tau::genmatching")
+                            ->debug("IS_ELE_PROMPT");
                         return (int)GenMatchingCode::IS_ELE_PROMPT;
                     }
             }
             if (closest_pdgid == 13 && prompt) {
                 // statusbit 2 is prompt muon
-                Logger::get("genmatching::tau::genmatching")
-                    ->debug("IS_MUON_PROMPT");
-                if (abs(closest_genparticle_mother_pdgid) == 24 && closest_genparticle_mother_status == 62 && (closest_genparticle_mother_statusFlag & 10000000000000)){
-                        return (int)GenMatchingCode::IS_MUON_FROM_W;
+                if (abs(closest_genparticle_mother_pdgid) == 24){
+                    Logger::get("genmatching::tau::genmatching")
+                        ->debug("IS_MUON_FROM_W");
+                    return (int)GenMatchingCode::IS_MUON_FROM_W;
                     }
-                    else {
-                        return (int)GenMatchingCode::IS_MUON_PROMPT;
+                else {
+                    Logger::get("genmatching::tau::genmatching")
+                            ->debug("IS_MUON_PROMPT");
+                    return (int)GenMatchingCode::IS_MUON_PROMPT;
                     }
             }
             if (closest_pdgid == 11 && from_tau) {
