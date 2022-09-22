@@ -88,6 +88,173 @@ ROOT::RDF::RNode buildgentriple(ROOT::RDF::RNode df, const std::string &recotrip
     return df.Define(gentriple, getGenTriple,
                      {recotriple, genindex_particle1, genindex_particle2, genindex_particle3});
 }
+/**
+ * @brief Function to get the true gen-level di-tau pair from the event. The
+ * pair is build by searching for the gen mother particle and the two requested
+ * daughter particles. For each stable daughter particle found in the collection
+ of gen particles, it is checked if the particle is a daughter of the requested
+ mother particle.
+ *
+ * @param df the Dataframe
+ * @param statusflags the column containing the status flags of the gen
+ particles
+ * @param status the column containing the status of the genparticles (status=1
+ means stable)
+ * @param pdgids the column containing the PDGID of the gen particles
+ * @param motherids the column containing the index of the mother particle of
+ the gen particles
+ * @param pts the column containing the pt of the gen particles (used for
+ sorting the particles by pt)
+ * @param genpair the output column containing the index of the two selected gen
+ particles
+ * @param mother_pdgid the PDGID of the mother particle
+ * @param daughter_1_pdgid the PDGID of the first daughter particle
+ * @param daughter_2_pdgid the PDGID of the second daughter particle
+ * @return auto the new Dataframe with the genpair column
+ */
+ROOT::RDF::RNode
+buildtruegentriple(ROOT::RDF::RNode df, const std::string &statusflags,
+                 const std::string &status, const std::string &pdgids,
+                 const std::string &motherids, const std::string &pts,
+                 const std::string &genpair, const int mother_pdgid,
+                 const int daughter_1_pdgid, const int daughter_2_pdgid) {
+
+    auto getTrueGenPair = [mother_pdgid, daughter_1_pdgid,
+                           daughter_2_pdgid](const ROOT::RVec<int> &statusflags,
+                                             const ROOT::RVec<int> &status,
+                                             const ROOT::RVec<int> &pdgids,
+                                             const ROOT::RVec<int> &motherids,
+                                             const ROOT::RVec<float> &pts) {
+        ROOT::RVec<int> genpair = {-1, -1};
+
+        // first we build structs, one for each genparticle
+        Logger::get("buildtruegenpair")
+            ->debug("Starting to build True Genpair for event");
+        ROOT::RVec<GenParticle> genparticles;
+        for (int i = 0; i < statusflags.size(); ++i) {
+            GenParticle genparticle;
+            genparticle.index = i;
+            genparticle.status = status.at(i);
+            genparticle.statusflag = StatusBits(statusflags.at(i));
+            genparticle.pdgid = abs(pdgids.at(i));
+            genparticle.motherid = motherids.at(i);
+            genparticles.push_back(genparticle);
+        }
+        Logger::get("buildtruegenpair")->debug("genparticles: ");
+        for (auto &genparticle : genparticles) {
+            Logger::get("buildtruegenpair")
+                ->debug("|--------------------------------------------");
+            Logger::get("buildtruegenpair")
+                ->debug("|    Index: {}", genparticle.index);
+            Logger::get("buildtruegenpair")
+                ->debug("|    Status: {}", genparticle.status);
+            Logger::get("buildtruegenpair")
+                ->debug("|     Statusflag: {}", genparticle.statusflag);
+            Logger::get("buildtruegenpair")
+                ->debug("|    Pdgid: {}", genparticle.pdgid);
+            Logger::get("buildtruegenpair")
+                ->debug("|    motherid: {}", genparticle.motherid);
+            Logger::get("buildtruegenpair")
+                ->debug("|--------------------------------------------");
+        }
+        auto gen_candidates_1 = ROOT::VecOps::Filter(
+            genparticles, [daughter_1_pdgid](const GenParticle &genparticle) {
+                return (daughter_1_pdgid == genparticle.pdgid) &&
+                       (genparticle.status == 1);
+            });
+        auto gen_candidates_2 = ROOT::VecOps::Filter(
+            genparticles, [daughter_2_pdgid](const GenParticle &genparticle) {
+                return (daughter_2_pdgid == genparticle.pdgid) &&
+                       (genparticle.status == 1);
+            });
+        if (daughter_1_pdgid == daughter_2_pdgid) {
+            // if the two daughter particles are the same, we need to find
+            // two valid ones there
+            for (const auto &gen_candidate_1 : gen_candidates_1) {
+                bool found = check_mother(genparticles, gen_candidate_1.index,
+                                          mother_pdgid);
+                Logger::get("buildtruegenpair")
+                    ->debug("Checking Daughter Candidates");
+                Logger::get("buildtruegenpair")
+                    ->debug("|--------------------------------------------");
+                Logger::get("buildtruegenpair")
+                    ->debug("|    Index: {}", gen_candidate_1.index);
+                Logger::get("buildtruegenpair")
+                    ->debug("|    Status: {}", gen_candidate_1.status);
+                Logger::get("buildtruegenpair")
+                    ->debug("|     Statusflag: {}", gen_candidate_1.statusflag);
+                Logger::get("buildtruegenpair")
+                    ->debug("|    Pdgid: {}", gen_candidate_1.pdgid);
+                Logger::get("buildtruegenpair")
+                    ->debug("|    motherid: {}", gen_candidate_1.motherid);
+                Logger::get("buildtruegenpair")
+                    ->debug("|    found_correct_mother: {}", found);
+                Logger::get("buildtruegenpair")
+                    ->debug("|    motherPdgid: {}", mother_pdgid);
+                Logger::get("buildtruegenpair")
+                    ->debug("|--------------------------------------------");
+                if (found && genpair[0] == -1) {
+                    genpair[0] = gen_candidate_1.index;
+                } else if (found && genpair[1] == -1) {
+                    genpair[1] = gen_candidate_1.index;
+                }
+            }
+        } else {
+            // in the case of two different daughter particles, we need find
+            // each one seperately
+            for (const auto &gen_candidate_1 : gen_candidates_1) {
+                if (check_mother(genparticles, gen_candidate_1.index,
+                                 mother_pdgid)) {
+                    genpair[0] = gen_candidate_1.index;
+                    break;
+                }
+            }
+            for (const auto &gen_candidate_2 : gen_candidates_2) {
+                if (check_mother(genparticles, gen_candidate_2.index,
+                                 mother_pdgid)) {
+                    genpair[1] = gen_candidate_2.index;
+                    break;
+                }
+            }
+        }
+        Logger::get("buildtruegenpair")
+            ->debug("Selected Particles: {} {}", genpair[0], genpair[1]);
+        if (genpair[0] == -1 || genpair[1] == -1) {
+            Logger::get("buildtruegenpair")
+                ->debug("no viable daughter particles found");
+            return genpair;
+        }
+        if (daughter_1_pdgid == daughter_2_pdgid) {
+            if (pts.at(genpair[0]) < pts.at(genpair[1])) {
+                std::swap(genpair[0], genpair[1]);
+            }
+        }
+
+        return genpair;
+    };
+    return df.Define(genpair, getTrueGenPair,
+                     {statusflags, status, pdgids, motherids, pts});
+}
+/// This function flags events, where a suitable particle triple is found.
+/// A triple is considered suitable, if a TripleSelectionAlgo (like
+/// whtautau_tripleselection::three_flavor::TripleSelectionAlgo) returns indices, that are
+/// not -1. Events, where any of the particle indices is -1 are vetoed
+/// by this filter.
+///
+/// \param df The input dataframe
+/// \param flagname The name of the generated flag column
+/// \param pairname The name of the column, containing the indices of the
+/// particles in the particle quantity vectors.
+/// \returns a dataframe with the
+/// new flag
+ROOT::RDF::RNode flagGoodTriples(ROOT::RDF::RNode df, const std::string &flagname,
+                               const std::string &triplename) {
+    using namespace ROOT::VecOps;
+    return df.Define(
+        flagname,
+        [](const ROOT::RVec<int> &triple) { return bool(Min(triple) >= 0); },
+        {triplename});
+}
 namespace three_flavor {
 
 /// Implementation of the triple selection algorithm. First, only events
@@ -125,20 +292,23 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
         const auto original_electron_indices =
             ROOT::VecOps::Nonzero(electron_mask);
         const auto original_muon_indices = ROOT::VecOps::Nonzero(muon_mask);
-
-        // !!!!!! check what to do with events that contain more than 1 t_h
-        // !! check weather the veto allows only for one triple?
         Logger::get("three_flavor::TripleSelectionAlgo")
-            ->debug("org tau {}, org ele {}, org mu {}", original_tau_indices.size(), original_electron_indices.size(), original_muon_indices.size());
-        Logger::get("three_flavor::TripleSelectionAlgo")
-            ->debug("masks: org tau {}, org ele {}, org mu {}", tau_mask, electron_mask, muon_mask);    
+            ->debug("masks: org tau {}, org ele {}, org mu {}", tau_mask, electron_mask, muon_mask);
 
-        // only select events with one good muon and one good electron
-        if (original_tau_indices.size() == 0 or
+        // only select events with one good muon and one good electron and at least one tau
+        if (original_tau_indices.size() < 1 or
             original_electron_indices.size() != 1 or
             original_muon_indices.size() != 1) {
+            // Logger::get("three_flavor::TripleSelectionAlgo")
+            // ->warn("pt tau {}, pt ele {}, pt mu {}", tau_pt, electron_pt, muon_pt);
+            // Logger::get("three_flavor::TripleSelectionAlgo")
+            // ->warn("eta tau {}, eta ele {}, eta mu {}", tau_eta, electron_eta, muon_eta);
+            // Logger::get("three_flavor::TripleSelectionAlgo")
+            // ->warn("org tau {}, org ele {}, org mu {}", original_tau_indices.size(), original_electron_indices.size(), original_muon_indices.size());
+
             return selected_triple;
         }
+            
         Logger::get("three_flavor::TripleSelectionAlgo")
             ->debug("Running algorithm on good taus and leptons");
         Logger::get("three_flavor::TripleSelectionAlgo")
@@ -209,7 +379,7 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
         //Construct four vectors of hadronic tau candidates and check the DeltaR requirements to the leptons. Triples are rejected if the candidates are too close
         for (auto &candidate : sorted_tau_idx) {
             Logger::get("three_flavor::TripleSelectionAlgo")
-                ->debug("{} debuging1", original_tau_indices.at(candidate));
+                ->debug("{} debuging1 {}", original_tau_indices.at(candidate), sorted_tau_idx.at(candidate));
             ROOT::Math::PtEtaPhiMVector tau = ROOT::Math::PtEtaPhiMVector(
                 tau_pt.at(original_tau_indices.at(candidate)), tau_eta.at(original_tau_indices.at(candidate)), tau_phi.at(original_tau_indices.at(candidate)),
                 tau_mass.at(original_tau_indices.at(candidate)));

@@ -21,6 +21,8 @@ bool check_mother(ROOT::RVec<GenParticle> genparticles, const int index,
 
 
 namespace whtautau_tripleselection {
+ROOT::RDF::RNode flagGoodTriples(ROOT::RDF::RNode df, const std::string &flagname,
+                               const std::string &triplename);
 ROOT::RDF::RNode buildgentriple(ROOT::RDF::RNode df, const std::string &recotriple,
                               const std::string &genindex_particle1,
                               const std::string &genindex_particle2,
