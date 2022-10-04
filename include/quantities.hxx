@@ -30,6 +30,10 @@ ROOT::RDF::RNode m_vis(ROOT::RDF::RNode df, const std::string &outputname,
                        const std::vector<std::string> &inputvectors);
 ROOT::RDF::RNode pt_vis(ROOT::RDF::RNode df, const std::string &outputname,
                         const std::vector<std::string> &inputvectors);
+ROOT::RDF::RNode eta_vis(ROOT::RDF::RNode df, const std::string &outputname,
+                        const std::vector<std::string> &inputvectors);
+ROOT::RDF::RNode phi_vis(ROOT::RDF::RNode df, const std::string &outputname,
+                        const std::vector<std::string> &inputvectors);
 ROOT::RDF::RNode pzetamissvis(ROOT::RDF::RNode df,
                               const std::string &outputname,
                               const std::string &p_1_p4,
@@ -44,6 +48,8 @@ ROOT::RDF::RNode deltaR(ROOT::RDF::RNode df, const std::string &outputname,
                         const std::string &p_1_p4, const std::string &p_2_p4);
 ROOT::RDF::RNode deltaPhi(ROOT::RDF::RNode df, const std::string &outputname,
                         const std::string &p_1_p4, const std::string &p_2_p4);
+ROOT::RDF::RNode deltaPhi_WH(ROOT::RDF::RNode df, const std::string &outputname,
+                        const std::string &p_1_p4, const std::string &p_2_p4, const std::string &p_3_p4);
 ROOT::RDF::RNode mT(ROOT::RDF::RNode df, const std::string &outputname,
                     const std::string &particle_p4, const std::string &met);
 ROOT::RDF::RNode pt_tt(ROOT::RDF::RNode df, const std::string &outputname,
