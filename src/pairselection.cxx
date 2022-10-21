@@ -89,8 +89,8 @@ ROOT::RDF::RNode buildgentriple(ROOT::RDF::RNode df, const std::string &recotrip
                      {recotriple, genindex_particle1, genindex_particle2, genindex_particle3});
 }
 /**
- * @brief Function to get the true gen-level di-tau pair from the event. The
- * pair is build by searching for the gen mother particle and the two requested
+ * @brief Function to get the true gen-level triple from the event. The
+ * triple is build by searching for the gen mother particles and the three requested
  * daughter particles. For each stable daughter particle found in the collection
  of gen particles, it is checked if the particle is a daughter of the requested
  mother particle.
@@ -105,31 +105,33 @@ ROOT::RDF::RNode buildgentriple(ROOT::RDF::RNode df, const std::string &recotrip
  the gen particles
  * @param pts the column containing the pt of the gen particles (used for
  sorting the particles by pt)
- * @param genpair the output column containing the index of the two selected gen
+ * @param gentriple the output column containing the index of the two selected gen
  particles
- * @param mother_pdgid the PDGID of the mother particle
+ * @param mother_pdgid_1 the PDGID of the mother particle of the first particle
+ * @param mother_pdgid_23 the PDGID of the mother particle of the second and third particle
  * @param daughter_1_pdgid the PDGID of the first daughter particle
  * @param daughter_2_pdgid the PDGID of the second daughter particle
+ * @param daughter_3_pdgid the PDGID of the second daughter particle
  * @return auto the new Dataframe with the genpair column
  */
 ROOT::RDF::RNode
 buildtruegentriple(ROOT::RDF::RNode df, const std::string &statusflags,
                  const std::string &status, const std::string &pdgids,
                  const std::string &motherids, const std::string &pts,
-                 const std::string &genpair, const int mother_pdgid,
-                 const int daughter_1_pdgid, const int daughter_2_pdgid) {
+                 const std::string &gentriple, const int mother_pdgid_1, const int mother_pdgid_23,
+                 const int daughter_1_pdgid, const int daughter_2_pdgid, const int daughter_3_pdgid) {
 
-    auto getTrueGenPair = [mother_pdgid, daughter_1_pdgid,
-                           daughter_2_pdgid](const ROOT::RVec<int> &statusflags,
+    auto getTrueGenTriple = [mother_pdgid_1, mother_pdgid_23, daughter_1_pdgid,
+                           daughter_2_pdgid, daughter_3_pdgid](const ROOT::RVec<int> &statusflags,
                                              const ROOT::RVec<int> &status,
                                              const ROOT::RVec<int> &pdgids,
                                              const ROOT::RVec<int> &motherids,
                                              const ROOT::RVec<float> &pts) {
-        ROOT::RVec<int> genpair = {-1, -1};
+        ROOT::RVec<int> gentriple = {-1, -1, -1};
 
         // first we build structs, one for each genparticle
-        Logger::get("buildtruegenpair")
-            ->debug("Starting to build True Genpair for event");
+        Logger::get("buildtruegentriple")
+            ->debug("Starting to build True Gentriple for event");
         ROOT::RVec<GenParticle> genparticles;
         for (int i = 0; i < statusflags.size(); ++i) {
             GenParticle genparticle;
@@ -140,21 +142,21 @@ buildtruegentriple(ROOT::RDF::RNode df, const std::string &statusflags,
             genparticle.motherid = motherids.at(i);
             genparticles.push_back(genparticle);
         }
-        Logger::get("buildtruegenpair")->debug("genparticles: ");
+        Logger::get("buildtruegentriple")->debug("genparticles: ");
         for (auto &genparticle : genparticles) {
-            Logger::get("buildtruegenpair")
+            Logger::get("buildtruegentriple")
                 ->debug("|--------------------------------------------");
-            Logger::get("buildtruegenpair")
+            Logger::get("buildtruegentriple")
                 ->debug("|    Index: {}", genparticle.index);
-            Logger::get("buildtruegenpair")
+            Logger::get("buildtruegentriple")
                 ->debug("|    Status: {}", genparticle.status);
-            Logger::get("buildtruegenpair")
+            Logger::get("buildtruegentriple")
                 ->debug("|     Statusflag: {}", genparticle.statusflag);
-            Logger::get("buildtruegenpair")
+            Logger::get("buildtruegentriple")
                 ->debug("|    Pdgid: {}", genparticle.pdgid);
-            Logger::get("buildtruegenpair")
+            Logger::get("buildtruegentriple")
                 ->debug("|    motherid: {}", genparticle.motherid);
-            Logger::get("buildtruegenpair")
+            Logger::get("buildtruegentriple")
                 ->debug("|--------------------------------------------");
         }
         auto gen_candidates_1 = ROOT::VecOps::Filter(
@@ -167,72 +169,44 @@ buildtruegentriple(ROOT::RDF::RNode df, const std::string &statusflags,
                 return (daughter_2_pdgid == genparticle.pdgid) &&
                        (genparticle.status == 1);
             });
-        if (daughter_1_pdgid == daughter_2_pdgid) {
-            // if the two daughter particles are the same, we need to find
-            // two valid ones there
-            for (const auto &gen_candidate_1 : gen_candidates_1) {
-                bool found = check_mother(genparticles, gen_candidate_1.index,
-                                          mother_pdgid);
-                Logger::get("buildtruegenpair")
-                    ->debug("Checking Daughter Candidates");
-                Logger::get("buildtruegenpair")
-                    ->debug("|--------------------------------------------");
-                Logger::get("buildtruegenpair")
-                    ->debug("|    Index: {}", gen_candidate_1.index);
-                Logger::get("buildtruegenpair")
-                    ->debug("|    Status: {}", gen_candidate_1.status);
-                Logger::get("buildtruegenpair")
-                    ->debug("|     Statusflag: {}", gen_candidate_1.statusflag);
-                Logger::get("buildtruegenpair")
-                    ->debug("|    Pdgid: {}", gen_candidate_1.pdgid);
-                Logger::get("buildtruegenpair")
-                    ->debug("|    motherid: {}", gen_candidate_1.motherid);
-                Logger::get("buildtruegenpair")
-                    ->debug("|    found_correct_mother: {}", found);
-                Logger::get("buildtruegenpair")
-                    ->debug("|    motherPdgid: {}", mother_pdgid);
-                Logger::get("buildtruegenpair")
-                    ->debug("|--------------------------------------------");
-                if (found && genpair[0] == -1) {
-                    genpair[0] = gen_candidate_1.index;
-                } else if (found && genpair[1] == -1) {
-                    genpair[1] = gen_candidate_1.index;
-                }
-            }
-        } else {
-            // in the case of two different daughter particles, we need find
-            // each one seperately
-            for (const auto &gen_candidate_1 : gen_candidates_1) {
-                if (check_mother(genparticles, gen_candidate_1.index,
-                                 mother_pdgid)) {
-                    genpair[0] = gen_candidate_1.index;
-                    break;
-                }
-            }
-            for (const auto &gen_candidate_2 : gen_candidates_2) {
-                if (check_mother(genparticles, gen_candidate_2.index,
-                                 mother_pdgid)) {
-                    genpair[1] = gen_candidate_2.index;
-                    break;
-                }
+        auto gen_candidates_3 = ROOT::VecOps::Filter(
+            genparticles, [daughter_3_pdgid](const GenParticle &genparticle) {
+                return (daughter_3_pdgid == genparticle.pdgid) &&
+                       (genparticle.status == 1);
+            });
+        // in the case of three different daughter particles, we need find
+        // each one seperately
+        for (const auto &gen_candidate_1 : gen_candidates_1) {
+            if (check_mother(genparticles, gen_candidate_1.index,
+                                mother_pdgid_1)) {
+                gentriple[0] = gen_candidate_1.index;
+                break;
             }
         }
-        Logger::get("buildtruegenpair")
-            ->debug("Selected Particles: {} {}", genpair[0], genpair[1]);
-        if (genpair[0] == -1 || genpair[1] == -1) {
-            Logger::get("buildtruegenpair")
-                ->debug("no viable daughter particles found");
-            return genpair;
-        }
-        if (daughter_1_pdgid == daughter_2_pdgid) {
-            if (pts.at(genpair[0]) < pts.at(genpair[1])) {
-                std::swap(genpair[0], genpair[1]);
+        for (const auto &gen_candidate_2 : gen_candidates_2) {
+            if (check_mother(genparticles, gen_candidate_2.index,
+                                mother_pdgid_23)) {
+                gentriple[1] = gen_candidate_2.index;
+                break;
             }
         }
-
-        return genpair;
+        for (const auto &gen_candidate_3 : gen_candidates_3) {
+            if (check_mother(genparticles, gen_candidate_3.index,
+                                mother_pdgid_23)) {
+                gentriple[2] = gen_candidate_3.index;
+                break;
+            }
+        }
+        Logger::get("buildtruegentriple")
+            ->debug("Selected Particles: {} {} {}", gentriple[0], gentriple[1], gentriple[2]);
+        if (gentriple[0] != -1 && gentriple[1] != -1 && gentriple[2] != -1) {
+            Logger::get("buildtruegentriple")
+                ->debug("viable daughter particles found");
+//            return gentriple;
+        }
+        return gentriple;
     };
-    return df.Define(genpair, getTrueGenPair,
+    return df.Define(gentriple, getTrueGenTriple,
                      {statusflags, status, pdgids, motherids, pts});
 }
 /// This function flags events, where a suitable particle triple is found.
@@ -262,14 +236,14 @@ namespace three_flavor {
 /// Events contain at least two good leptons and one good tau, if the
 /// tau_mask the two leptonmasks have nonzero elements. These masks are
 /// constructed using the functions from the physicsobject namespace
-/// (e.g. physicsobject::CutPt).
+/// (e.g. physicsobject::CutPt). The argument triple gives information wheather the emt or the met channel is considered.
 ///
 /// \returns an `ROOT::RVec<int>` with two values, the first one beeing
 /// the lepton from the W index, the second one beeing the lepton from the tau index and the third one the hadronic tau index.
-auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_leplep) {
+auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_leplep, const std::string &triple) {
     Logger::get("three_flavor::TripleSelectionAlgo")
         ->debug("Setting up algorithm");
-    return [mindeltaR_leptau, mindeltaR_leplep](const ROOT::RVec<float> &tau_pt,
+    return [mindeltaR_leptau, mindeltaR_leplep, triple](const ROOT::RVec<float> &tau_pt,
                        const ROOT::RVec<float> &tau_eta,
                        const ROOT::RVec<float> &tau_phi,
                        const ROOT::RVec<float> &tau_mass,
@@ -300,15 +274,15 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
             original_electron_indices.size() != 1 or
             original_muon_indices.size() != 1) {
             // Logger::get("three_flavor::TripleSelectionAlgo")
-            // ->warn("pt tau {}, pt ele {}, pt mu {}", tau_pt, electron_pt, muon_pt);
+            // ->debug("pt tau {}, pt ele {}, pt mu {}", tau_pt, electron_pt, muon_pt);
             // Logger::get("three_flavor::TripleSelectionAlgo")
-            // ->warn("eta tau {}, eta ele {}, eta mu {}", tau_eta, electron_eta, muon_eta);
+            // ->debug("eta tau {}, eta ele {}, eta mu {}", tau_eta, electron_eta, muon_eta);
             // Logger::get("three_flavor::TripleSelectionAlgo")
-            // ->warn("org tau {}, org ele {}, org mu {}", original_tau_indices.size(), original_electron_indices.size(), original_muon_indices.size());
+            // ->debug("org tau {}, org ele {}, org mu {}", original_tau_indices.size(), original_electron_indices.size(), original_muon_indices.size());
 
             return selected_triple;
         }
-            
+        
         Logger::get("three_flavor::TripleSelectionAlgo")
             ->debug("Running algorithm on good taus and leptons");
         Logger::get("three_flavor::TripleSelectionAlgo")
@@ -342,13 +316,15 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
             ->debug("selected electron pt {}", selected_electron_pt);
         Logger::get("three_flavor::TripleSelectionAlgo")
             ->debug("selected muon pt {}", selected_muon_pt);
+        
+        
+        if ((triple == "emt") && (selected_muon_pt.at(0) > selected_electron_pt.at(0))) {
         // only select triples with the pt_electron > pt_muon; original_lepton_indices.at(0) is the indice of the lepton with nonzero mask in the mask vector
-        if (selected_muon_pt.at(0) > selected_electron_pt.at(0)) {
-            Logger::get("three_flavor::TripleSelectionAlgo")
-            ->debug("selected electron pt {}", selected_electron_pt);
-            Logger::get("three_flavor::TripleSelectionAlgo")
-            ->debug("selected muon pt {}", selected_muon_pt);
-            return selected_triple;
+                return selected_triple;
+        }
+        else if ((triple == "met") && (selected_electron_pt.at(0) > selected_muon_pt.at(0))) {
+            // only select triples with the pt_muon > pt_electron; original_lepton_indices.at(0) is the indice of the lepton with nonzero mask in the mask vector
+                return selected_triple;
         }
 
         // sort hadronic taus by their deeptau vs. jets score in descending order
@@ -411,20 +387,151 @@ auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_l
                     ->debug("electronPt = {} , muonPt = {} ,TauPt = {} ",
                             electron_pt.at(original_electron_indices.at(0)), muon_pt.at(original_muon_indices.at(0)), tau_pt.at(original_tau_indices.at(candidate)));
 
-                
-                selected_triple = {static_cast<int>(original_electron_indices.at(0)), static_cast<int>(original_muon_indices.at(0)), 
-                                    static_cast<int>(original_tau_indices.at(candidate))};
-                Logger::get("three_flavor::TripleSelectionAlgo")
-                ->debug("selected triple {}", selected_triple);
-                break;
+                if (triple == "emt") {
+                    selected_triple = {static_cast<int>(original_electron_indices.at(0)), static_cast<int>(original_muon_indices.at(0)), 
+                                        static_cast<int>(original_tau_indices.at(candidate))};
+                    Logger::get("three_flavor::TripleSelectionAlgo")
+                    ->debug("selected triple {}", selected_triple);
+                    break;
+                }
+                else {
+                    selected_triple = {static_cast<int>(original_muon_indices.at(0)), static_cast<int>(original_electron_indices.at(0)), 
+                                        static_cast<int>(original_tau_indices.at(candidate))};
+                    Logger::get("three_flavor::TripleSelectionAlgo")
+                    ->debug("selected triple {}", selected_triple);
+                    break;
+                }
             }
         }
+        if (selected_triple[0] != -1 && selected_triple[1] != -1 && selected_triple[2] != -1) {
         Logger::get("three_flavor::TripleSelectionAlgo")
             ->debug("Final triple {} {} {}", selected_triple[0], selected_triple[1], selected_triple[2]);
-
+        }
         return selected_triple;
     };
 } // end namespace TripleSelectionAlgo
+
+/// Implementation of the triple selection algorithm without considering electrons. First, only events
+/// that contain at least two goodleptons and one goodTau are considered.
+/// Events contain at least two good leptons and one good tau, if the
+/// tau_mask the two leptonmasks have nonzero elements. These masks are
+/// constructed using the functions from the physicsobject namespace
+/// (e.g. physicsobject::CutPt).
+///
+/// \returns an `ROOT::RVec<int>` with two values, the first one beeing
+/// the lepton from the W index, the second one beeing the lepton from the tau index and the third one the hadronic tau index.
+auto TripleSelectionWithoutEleAlgo(const float &mindeltaR_leptau) {
+    Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+        ->debug("Setting up algorithm");
+    return [mindeltaR_leptau](const ROOT::RVec<float> &tau_pt,
+                       const ROOT::RVec<float> &tau_eta,
+                       const ROOT::RVec<float> &tau_phi,
+                       const ROOT::RVec<float> &tau_mass,
+                       const ROOT::RVec<float> &tau_iso,
+                       const ROOT::RVec<float> &electron_pt,
+                       const ROOT::RVec<float> &electron_eta,
+                       const ROOT::RVec<float> &electron_phi,
+                       const ROOT::RVec<float> &electron_mass,
+                       const ROOT::RVec<float> &electron_iso,
+                       const ROOT::RVec<float> &muon_pt,
+                       const ROOT::RVec<float> &muon_eta,
+                       const ROOT::RVec<float> &muon_phi,
+                       const ROOT::RVec<float> &muon_mass,
+                       const ROOT::RVec<int> &electron_mask,
+                       const ROOT::RVec<int> &muon_mask,
+                       const ROOT::RVec<int> &tau_mask) {
+        // first entry is the lepton index,
+        // second entry is the tau index
+        ROOT::RVec<int> selected_triple = {-1, -2, -2};
+        const auto original_tau_indices = ROOT::VecOps::Nonzero(tau_mask);
+        const auto original_electron_indices =
+            ROOT::VecOps::Nonzero(electron_mask);
+        const auto original_muon_indices = ROOT::VecOps::Nonzero(muon_mask);
+        Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("masks: org tau {}, org ele {}, org mu {}", tau_mask, electron_mask, muon_mask);
+
+        // only select events with one good muon and one good electron and at least one tau
+        if (original_tau_indices.size() < 1 or
+            original_muon_indices.size() != 1) {
+            // Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            // ->debug("pt tau {}, pt ele {}, pt mu {}", tau_pt, electron_pt, muon_pt);
+            // Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            // ->debug("eta tau {}, eta ele {}, eta mu {}", tau_eta, electron_eta, muon_eta);
+            // Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            // ->debug("org tau {}, org ele {}, org mu {}", original_tau_indices.size(), original_electron_indices.size(), original_muon_indices.size());
+
+            return selected_triple;
+        }
+        const auto selected_tau_pt =
+            ROOT::VecOps::Take(tau_pt, original_tau_indices);
+        const auto selected_tau_iso =
+            ROOT::VecOps::Take(tau_iso, original_tau_indices);
+        Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("Running algorithm on good taus and leptons");
+        Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("original electron indices {}", original_electron_indices);
+        Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("original muon indices {}", original_muon_indices);
+        Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("original tau indices {}", original_tau_indices);
+
+        // sort hadronic taus by their deeptau vs. jets score in descending order
+        const auto sorted_tau_idx = ROOT::VecOps::Argsort(
+            -1. * selected_tau_iso);
+        Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("sorted taus {}", sorted_tau_idx);
+
+        // construct the four vectors of the selected leptons         
+        if (original_electron_indices.size() > 0) {
+            // sort electrons by their isolation in descending order
+            const auto selected_ele_iso =
+            ROOT::VecOps::Take(electron_iso, original_electron_indices);
+            const auto sorted_ele_iso = ROOT::VecOps::Argsort(
+            selected_ele_iso);
+            Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("sorted eles {}", sorted_ele_iso);
+            ROOT::Math::PtEtaPhiMVector electron = ROOT::Math::PtEtaPhiMVector(
+                electron_pt.at(original_electron_indices.at(sorted_ele_iso.at(0))), electron_eta.at(original_electron_indices.at(sorted_ele_iso.at(0))),
+                electron_phi.at(original_electron_indices.at(sorted_ele_iso.at(0))), electron_mass.at(original_electron_indices.at(sorted_ele_iso.at(0))));
+            Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+                ->debug("{} electron vector: {}", original_electron_indices, electron);
+        }
+        Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("muon pts: {}", muon_pt); 
+        ROOT::Math::PtEtaPhiMVector muon = ROOT::Math::PtEtaPhiMVector(
+            muon_pt.at(original_muon_indices.at(0)), muon_eta.at(original_muon_indices.at(0)),
+            muon_phi.at(original_muon_indices.at(0)), muon_mass.at(original_muon_indices.at(0)));
+        Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("{} muon vector: {}", original_muon_indices, muon);    
+
+        //Construct four vectors of hadronic tau candidates and check the DeltaR requirements to the leptons. Triples are rejected if the candidates are too close
+        for (auto &candidate : sorted_tau_idx) {
+            Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+                ->debug("{} debuging1 {}", original_tau_indices.at(candidate), sorted_tau_idx.at(candidate));
+            ROOT::Math::PtEtaPhiMVector tau = ROOT::Math::PtEtaPhiMVector(
+                tau_pt.at(original_tau_indices.at(candidate)), tau_eta.at(original_tau_indices.at(candidate)), tau_phi.at(original_tau_indices.at(candidate)),
+                tau_mass.at(original_tau_indices.at(candidate)));
+            if (ROOT::Math::VectorUtil::DeltaR(muon, tau) > mindeltaR_leptau) {
+                if (original_electron_indices.size() > 0) {                           
+                selected_triple = {static_cast<int>(original_electron_indices.at(0)), static_cast<int>(original_muon_indices.at(0)), 
+                                static_cast<int>(original_tau_indices.at(candidate))};
+                Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+                ->debug("selected triple {}", selected_triple);
+                }
+                else {                           
+                selected_triple = {-1, static_cast<int>(original_muon_indices.at(0)), 
+                                static_cast<int>(original_tau_indices.at(candidate))};
+                Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+                ->debug("selected triple {}", selected_triple);
+                }
+                break;
+            }
+        }
+        Logger::get("three_flavor::TripleSelectionWithoutEleAlgo")
+            ->debug("Final triple {} {} {}", selected_triple[0], selected_triple[1], selected_triple[2]);
+        return selected_triple;
+    };  
+} // end namespace TripleSelectionWithoutElectronAlgo
 } // end namespace three_flavor
 
 namespace elemutau {
@@ -459,7 +566,7 @@ namespace elemutau {
  * @param mindeltaR_leplep the seperation between the leptons has to be larger
  than
  * this value
- * @return a new dataframe with the pair index column added
+ * @return a new dataframe with the triple index column added
  */
 ROOT::RDF::RNode TripleSelection(ROOT::RDF::RNode df,
                                const std::vector<std::string> &input_vector,
@@ -467,14 +574,107 @@ ROOT::RDF::RNode TripleSelection(ROOT::RDF::RNode df,
                                const float &mindeltaR_leptau, const float &mindeltaR_leplep) {
     Logger::get("elemutau::TripleSelection")
         ->debug("Setting up EleMuTau Triple building");
+    const std::string triple = "emt" ;
     auto df1 = df.Define(
         triplename,
-        whtautau_tripleselection::three_flavor::TripleSelectionAlgo(mindeltaR_leptau, mindeltaR_leplep),
+        whtautau_tripleselection::three_flavor::TripleSelectionAlgo(mindeltaR_leptau, mindeltaR_leplep, triple),
         input_vector);
     return df1;
 }
 
-} // end namespace mutau
+/**
+ * @brief Function used to select the lepton triple from the W boson and the Higgs boson decay. 
+ Only triples are selected if the electron pt is larger than the pt of the muon. 
+ The electron is than assigned to the W boson.
+ *
+ * @param df the input dataframe
+ * @param input_vector vector of strings containing the columns needed for the
+ * alogrithm. For the muTau pair selection these values are:
+    - tau_pt
+    - tau_eta
+    - tau_phi
+    - tau_mass
+    - electron_pt
+    - electron_eta
+    - electron_phi
+    - electron_mass
+    - muon_pt
+    - muon_eta
+    - muon_phi
+    - muon_mass
+    - electron_mask containing the flags whether the electron is a good electron
+    - tau_mask containing the flags whether the tau is a good tau or not
+    - muon_mask containing the flags whether the muon is a good muon or not
+ * @param triplename name of the new column containing the pair index
+ * @param mindeltaR_leptau the seperation between each lepton and the tau has to be larger
+ than
+ * this value
+ * @param mindeltaR_leplep the seperation between the leptons has to be larger
+ than
+ * this value
+ * @return a new dataframe with the pair index column added
+ */
+ROOT::RDF::RNode TripleSelectionWOEle(ROOT::RDF::RNode df,
+                               const std::vector<std::string> &input_vector,
+                               const std::string &triplename,
+                               const float &mindeltaR_leptau) {
+    Logger::get("elemutau::TripleSelectionWOEle")
+        ->debug("Setting up EleMuTau Triple building");
+    auto df1 = df.Define(
+        triplename,
+        whtautau_tripleselection::three_flavor::TripleSelectionWithoutEleAlgo(mindeltaR_leptau),
+        input_vector);
+    return df1;
+}
+} // end namespace elemutau
+namespace mueletau {
+
+/**
+ * @brief Function used to select the lepton triple from the W boson and the Higgs boson decay. 
+ Only triples are selected if the electron pt is larger than the pt of the muon. 
+ The electron is than assigned to the W boson.
+ *
+ * @param df the input dataframe
+ * @param input_vector vector of strings containing the columns needed for the
+ * alogrithm. For the muTau pair selection these values are:
+    - tau_pt
+    - tau_eta
+    - tau_phi
+    - tau_mass
+    - electron_pt
+    - electron_eta
+    - electron_phi
+    - electron_mass
+    - muon_pt
+    - muon_eta
+    - muon_phi
+    - muon_mass
+    - electron_mask containing the flags whether the electron is a good electron
+    - tau_mask containing the flags whether the tau is a good tau or not
+    - muon_mask containing the flags whether the muon is a good muon or not
+ * @param triplename name of the new column containing the pair index
+ * @param mindeltaR_leptau the seperation between each lepton and the tau has to be larger
+ than
+ * this value
+ * @param mindeltaR_leplep the seperation between the leptons has to be larger
+ than
+ * this value
+ * @return a new dataframe with the triple index column added
+ */
+ROOT::RDF::RNode TripleSelection(ROOT::RDF::RNode df,
+                               const std::vector<std::string> &input_vector,
+                               const std::string &triplename,
+                               const float &mindeltaR_leptau, const float &mindeltaR_leplep) {
+    Logger::get("mueletau::TripleSelection")
+        ->debug("Setting up MuEleTau Triple building");
+    const std::string triple = "met" ;
+    auto df1 = df.Define(
+        triplename,
+        whtautau_tripleselection::three_flavor::TripleSelectionAlgo(mindeltaR_leptau, mindeltaR_leplep, triple),
+        input_vector);
+    return df1;
+}
+} // end namespace mueletau
 }// end namespace whtautau_tripleselection
 
 

@@ -21,6 +21,12 @@ bool check_mother(ROOT::RVec<GenParticle> genparticles, const int index,
 
 
 namespace whtautau_tripleselection {
+ROOT::RDF::RNode
+buildtruegentriple(ROOT::RDF::RNode df, const std::string &statusflags,
+                 const std::string &status, const std::string &pdgids,
+                 const std::string &motherids, const std::string &pts,
+                 const std::string &gentriple, const int mother_pdgid_1, const int mother_pdgid_23,
+                 const int daughter_1_pdgid, const int daughter_2_pdgid, const int daughter_3_pdgid);
 ROOT::RDF::RNode flagGoodTriples(ROOT::RDF::RNode df, const std::string &flagname,
                                const std::string &triplename);
 ROOT::RDF::RNode buildgentriple(ROOT::RDF::RNode df, const std::string &recotriple,
@@ -32,11 +38,21 @@ namespace three_flavor {
 auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_leplep);
 } // end namespace three_flavor
 namespace elemutau {
+ROOT::RDF::RNode TripleSelection(ROOT::RDF::RNode df,
+                               const std::vector<std::string> &input_vector,
+                               const std::string &triplename,
+                               const float &mindeltaR_leptau, const float &mindeltaR_leplep);
+ROOT::RDF::RNode TripleSelectionWOEle(ROOT::RDF::RNode df,
+                               const std::vector<std::string> &input_vector,
+                               const std::string &triplename,
+                               const float &mindeltaR_leptau);                               
+} //end namespace elemutau
+namespace mueletau {
     ROOT::RDF::RNode TripleSelection(ROOT::RDF::RNode df,
                                const std::vector<std::string> &input_vector,
                                const std::string &triplename,
                                const float &mindeltaR_leptau, const float &mindeltaR_leplep);
-} //end namespace elemutau
+}//end namespace mueletau
 }
 namespace ditau_pairselection {
 ROOT::RDF::RNode buildgenpair(ROOT::RDF::RNode df, const std::string &recopair,

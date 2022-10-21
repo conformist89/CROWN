@@ -788,7 +788,7 @@ selection_trigger(ROOT::RDF::RNode df, const std::string &pt_1,
                   const std::string &sf_file, const std::string &idAlgorithm) {
 
     Logger::get("EmbeddingSelectionTriggerSF")
-        ->debug("Correction - Name {}", idAlgorithm);
+        ->debug("Correction - Name {} pt_1 {} pt_2 {}", idAlgorithm, pt_1, pt_2);
     auto evaluator =
         correction::CorrectionSet::from_file(sf_file)->at(idAlgorithm);
     auto df1 = df.Define(
@@ -911,7 +911,7 @@ ROOT::RDF::RNode electron_sf(ROOT::RDF::RNode df, const std::string &pt,
                              const float &extrapolation_factor = 1.0) {
 
     Logger::get("EmbeddingElectronSF")
-        ->debug("Correction - Name {}", idAlgorithm);
+        ->debug("Correction - Name {} pt {}", idAlgorithm, pt);
     auto evaluator =
         correction::CorrectionSet::from_file(sf_file)->at(idAlgorithm);
     auto df1 = df.Define(

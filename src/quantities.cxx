@@ -259,6 +259,57 @@ ROOT::RDF::RNode pt_vis(ROOT::RDF::RNode df, const std::string &outputname,
         },
         inputvectors);
 }
+/// Function to calculate the Higgs boson mass from a pair of lorentz vectors (visible Higgs system) and the neutrino 
+/// four vector and
+/// add it to the dataframe.
+///
+/// \param df the dataframe to add the quantity to
+/// \param outputname name of the new column containing the pt value
+/// \param inputvectors a vector of the two names of the columns containing the
+/// required lorentz vectors
+///
+/// \returns a dataframe with the new column
+
+ROOT::RDF::RNode m_tt_lt(ROOT::RDF::RNode df, const std::string &outputname,
+                        const std::vector<std::string> &inputvectors) {
+    // build visible pt from the two particles
+    return df.Define(
+        outputname,
+        [](const ROOT::Math::PtEtaPhiMVector &p4_1,
+           const ROOT::Math::PtEtaPhiMVector &p4_2,
+           const ROOT::Math::PtEtaPhiEVector &p4_3) {
+            if (p4_1.pt() < 0.0 || p4_2.pt() < 0.0 || p4_3.pt() < 0.0)
+                return default_float;
+            auto const higgssystem = p4_1 + p4_2 + p4_3;
+            return (float)higgssystem.M();
+        },
+        inputvectors);
+}
+/// Function to calculate the pt of the W from a the visible lepton fourvector, the met four vector and the neutrino four vector from the Higgs system and
+/// add it to the dataframe.
+///
+/// \param df the dataframe to add the quantity to
+/// \param outputname name of the new column containing the pt value
+/// \param inputvectors a vector of the two names of the columns containing the
+/// required lorentz vectors
+///
+/// \returns a dataframe with the new column
+
+ROOT::RDF::RNode pt_W_lt(ROOT::RDF::RNode df, const std::string &outputname,
+                        const std::vector<std::string> &inputvectors) {
+    // build visible pt from the two particles
+    return df.Define(
+        outputname,
+        [](const ROOT::Math::PtEtaPhiMVector &p4_1,
+           const ROOT::Math::PtEtaPhiMVector &p4_2,
+           const ROOT::Math::PtEtaPhiEVector &p4_3) {
+            if (p4_1.pt() < 0.0 || p4_2.pt() < 0.0 || p4_3.pt() < 0.0)
+                return default_float;
+            auto const w_p4 = p4_1 + p4_2 - p4_3;
+            return (float)w_p4.Pt();
+        },
+        inputvectors);
+}
 /// Function to calculate the visible eta from a pair of lorentz vectors and
 /// add it to the dataframe. The visible eta is calculated as eta of the
 /// lorentz vector of the dilepton system.
