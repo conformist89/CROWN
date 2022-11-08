@@ -35,8 +35,11 @@ ROOT::RDF::RNode buildgentriple(ROOT::RDF::RNode df, const std::string &recotrip
                               const std::string &genindex_particle3,
                               const std::string &gentriple);
 namespace three_flavor {
-auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_leplep);
+auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_leplep, const std::string &triple);
 } // end namespace three_flavor
+namespace two_flavor {
+auto TripleSelectionAlgo(const float &mindeltaR_leptau, const float &mindeltaR_leplep);
+} // end namespace two_flavor
 namespace elemutau {
 ROOT::RDF::RNode TripleSelection(ROOT::RDF::RNode df,
                                const std::vector<std::string> &input_vector,
@@ -53,6 +56,12 @@ namespace mueletau {
                                const std::string &triplename,
                                const float &mindeltaR_leptau, const float &mindeltaR_leplep);
 }//end namespace mueletau
+namespace mumutau {
+ROOT::RDF::RNode TripleSelection(ROOT::RDF::RNode df,
+                               const std::vector<std::string> &input_vector,
+                               const std::string &triplename,
+                               const float &mindeltaR_leptau, const float &mindeltaR_leplep);
+}
 }
 namespace ditau_pairselection {
 ROOT::RDF::RNode buildgenpair(ROOT::RDF::RNode df, const std::string &recopair,
