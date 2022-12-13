@@ -605,7 +605,21 @@ ROOT::RDF::RNode CutDecayModes(ROOT::RDF::RNode df, const std::string &maskname,
 /// \return a dataframe containing the new mask
 ROOT::RDF::RNode CutTauID(ROOT::RDF::RNode df, const std::string &maskname,
                           const std::string &nameID, const int &idxID) {
-    auto df1 = df.Define(maskname, basefunctions::FilterID(idxID), {nameID});
+    // auto df1 = df.Define(maskname, basefunctions::FilterID(idxID), {nameID});
+        auto FilterID = [idxID](const ROOT::RVec<UChar_t> &IDs) {
+        ROOT::RVec<int> mask;
+        for (auto const ID : IDs) {
+            if (idxID < 0 )
+                mask.push_back(int(1));
+            else if (ID >= idxID)
+               mask.push_back(int(1));
+           else
+                mask.push_back(int(0));
+        }
+        return mask;
+    }; 
+   auto df1 = df.Define(maskname, FilterID, {nameID}); 
+
     return df1;
 }
 /// Function to correct e to tau fake pt
