@@ -724,4 +724,4 @@ ROOT::RDF::RNode is_global(ROOT::RDF::RNode df, const std::string &outputname,
 }
 } // end namespace muon
 } // end namespace quantities
-#endif /* GUA
+#endif /* GUARD_QUANTITIES_H */
