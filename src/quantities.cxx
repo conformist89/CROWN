@@ -662,8 +662,16 @@ ROOT::RDF::RNode TauIDFlag(ROOT::RDF::RNode df, const std::string &outputname,
                     position, pair, idxID, IDs);
             const int index = pair.at(position);
             const int ID = IDs.at(index, default_int);
-            if (ID != default_int)
-                return std::min(1, int(ID & 1 << (idxID - 1)));
+            if (ID != default_int){
+                // std::cout << "\n***************" << std::endl;
+                // std::cout << "idxID =" <<int(idxID) << std::endl;
+                // std::cout << "(idxID - 1)=" << (idxID - 1) << std::endl;
+                // std::cout << "1 << (idxID - 1)=" <<(1 << (idxID - 1)) << std::endl;
+                // std::cout << "idxID =" <<int(idxID) << std::endl;
+                // std::cout << "int(ID & 1 << (idxID - 1))=" << int(ID & 1 << (idxID - 1)) << std::endl;
+                // return std::min(1, int(ID & 1 << (idxID - 1)));
+                return ID>=idxID? 1 : 0;
+            }
             else
                 return int(ID);
         },
@@ -716,4 +724,4 @@ ROOT::RDF::RNode is_global(ROOT::RDF::RNode df, const std::string &outputname,
 }
 } // end namespace muon
 } // end namespace quantities
-#endif /* GUARD_QUANTITIES_H */
+#endif /* GUA
