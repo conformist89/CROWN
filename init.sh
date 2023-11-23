@@ -48,6 +48,9 @@ pathadd "${HOME}/.local/bin/"
 # set the cmake generator to Ninja
 # export CMAKE_GENERATOR="Ninja"
 export CMAKE_GENERATOR="Unix Makefiles"
+# set the compiler optimization for cling to O2, this
+# will result in about 20% faster JIT for the snapshot generation
+export EXTRA_CLING_ARGS='-O2'
 
 # clone a given analysis if an argument is given
 if [ -z "$1" ]; then
@@ -55,16 +58,15 @@ if [ -z "$1" ]; then
 else
     if [[ "$1" == "tau" && ! -d "${SCRIPT_DIR}/analysis_configurations/tau" ]]; then
         echo "Cloning analysis tau into ${SCRIPT_DIR}/analysis_configurations/tau"
-        git clone git@github.com:KIT-CMS/TauAnalysis-CROWN.git ${SCRIPT_DIR}/analysis_configurations/tau
+        git clone git@github.com:KIT-CMS/TauAnalysis-CROWN.git "${SCRIPT_DIR}/analysis_configurations/tau"
     elif [[ "$1" == "earlyrun3" && ! -d "${SCRIPT_DIR}/analysis_configurations/earlyrun3" ]]; then
         echo "Cloning analysis earlyrun3 into ${SCRIPT_DIR}/analysis_configurations/earlyrun3"
-        git clone https://github.com/khaosmos93/CROWN-config-earlyRun3.git ${SCRIPT_DIR}/analysis_configurations/earlyrun3
+        git clone https://github.com/khaosmos93/CROWN-config-earlyRun3.git "${SCRIPT_DIR}/analysis_configurations/earlyrun3"
     elif [[ "$1" == "whtautau" && ! -d "${SCRIPT_DIR}/analysis_configurations/whtautau" ]]; then
         echo "Cloning analysis whtautau into ${SCRIPT_DIR}/analysis_configurations/whtautau"
-        git clone git@github.com:KIT-CMS/WHTauTauAnalysis-CROWN.git ${SCRIPT_DIR}/analysis_configurations/whtautau
-    elif [[ "$1" == "s" && ! -d "${SCRIPT_DIR}/analysis_configurations/s" ]]
-    then
+        git clone git@github.com:KIT-CMS/WHTauTauAnalysis-CROWN.git "${SCRIPT_DIR}/analysis_configurations/whtautau"
+    elif [[ "$1" == "s" && ! -d "${SCRIPT_DIR}/analysis_configurations/s" ]]; then
         echo "Cloning analysis s-channel into ${SCRIPT_DIR}/analysis_configurations/s"
-        git clone git@github.com:nfaltermann/CROWNs.git ${SCRIPT_DIR}/analysis_configurations/s
+        git clone git@github.com:nfaltermann/CROWNs.git "${SCRIPT_DIR}/analysis_configurations/s"
     fi
 fi
